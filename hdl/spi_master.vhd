@@ -78,7 +78,7 @@ begin
       estado         <= libre;
       ready_tx       <= '1';
       ena_rd         <= '0';
-      cnt_bits_tx <= (others => '0');
+--    cnt_bits_tx <= (others => '0');
       SPC_ena <= '0';
       nCS <= '1';
 
@@ -150,7 +150,29 @@ begin
   SPC_ena_wr <= '1' when SPC_cnt = SPI_ENA_WR else
               '0';
   
-  -- hacer filtrado de SPC como se hacia para scl en i2c?
+-- hacer filtrado de SPC como se hacia para scl en i2c?
+
+-- Control de cnt_bits_tx.
+  process(clk, nRst)
+  begin
+    if nRst = '0' then
+      cnt_bits_tx <= (0 => '1', others => '0');
+      
+    elsif clk'event and clk = '1' then
+      if estado = start_tx then
+        cnt_bits_tx <= (0 => '1', others => '0');
+        
+      elsif SPC_ena_wr = '1' and ((estado = wr_op and cnt_bits_tx <= 16) or (estado = rd_op and cnt_bits_tx <= 8)) then
+        cnt_bits_tx <= cnt_bits_tx + 1;
+        
+      elsif SPC_ena_rd = '1' and estado = rd_op and cnt_bits_tx > 8 and cnt_bits_tx <= 40 then
+        cnt_bits_tx <= cnt_bits_tx + 1;
+        
+      end if;
+      
+    end if;
+  end process;
+
 
   -- Reg_out: Registro de desplazamiento para los datos de salida
   -- escritura de bit en flancos de bajada de SPC
@@ -181,7 +203,7 @@ begin
       
         SDO <= reg_SDO(15);
         reg_SDO <= reg_SDO(14 downto 0) & '0'; -- OJO
-        cnt_bits_tx <= cnt_bits_tx + 1;
+--      cnt_bits_tx <= cnt_bits_tx + 1;
         
       end if;
       
@@ -206,7 +228,7 @@ begin
          cnt_bits_tx > 8 and cnt_bits_tx <= 40 then
          
         reg_SDI <= reg_SDI(30 downto 0) & SDI;
-        cnt_bits_tx <= cnt_bits_tx + 1;
+--      cnt_bits_tx <= cnt_bits_tx + 1;
          
       end if;
     end if;
