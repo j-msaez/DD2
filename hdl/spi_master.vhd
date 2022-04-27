@@ -76,8 +76,7 @@ begin
   begin
     if nRst = '0' then
       estado         <= libre;
-      ready_tx       <= '1';
-      ena_rd         <= '0';
+--    ena_rd         <= '0';
 --    cnt_bits_tx <= (others => '0');
       SPC_ena <= '0';
       nCS <= '1';
@@ -105,7 +104,6 @@ begin
         when wr_op | rd_op =>
           if fin_tx = '1' then
             estado <= end_tx;
-            cnt_bits_tx <= (others => '0');
             SPC_ena <= '0';
 
           end if;
@@ -234,6 +232,7 @@ begin
     end if;
   end process;
   
+  -- Presenta glitches.
   ena_rd <= '1' when estado = rd_op and SPC_ena_rd = '1' and (cnt_bits_tx = 16 or cnt_bits_tx = 24 or cnt_bits_tx = 32 or cnt_bits_tx = 40) else
             '0';
   
