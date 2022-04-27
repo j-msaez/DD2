@@ -19,9 +19,9 @@ port(clk:           in std_logic;
      nRst:          in std_logic;
 
      -- Entradas/Salidas linea SPI a 4 hilos
-     CS:            buffer std_logic;
+     nCS:           buffer std_logic;
      SPC:           buffer std_logic;
-     SDI:           buffer std_logic;
+     SDI:           in std_logic;
      SDO:           buffer std_logic;
 
      -- Entradas de control externo
@@ -29,13 +29,13 @@ port(clk:           in std_logic;
      tipo_op_nW_R:  in std_logic;                         -- nW/R, ('0' escribir un byte, '1' leer) 
      
      -- Entradas de datos de escritura
-     reg_addr:      buffer std_logic_vector(5 downto 0);  -- Registro sobre el cual se realizan las operaciones de RW.
+     reg_addr:      in std_logic_vector(5 downto 0);  -- Registro sobre el cual se realizan las operaciones de RW.
 
      -- Entradas de datos de escritura
-     dato_wr:       buffer std_logic_vector(7 downto 0);  -- Dato de escritura entrante
+     dato_wr:       in std_logic_vector(7 downto 0);  -- Dato de escritura entrante
 
      -- Salidas de datos de lectura
-     ena_rd:        buffer std_logic;                     -- Indicacion de dato de lectura valido. ('0' dato invalido, '1' dato valido) 
+     ena_rd:        buffer std_logic;                     -- Indicacion de dato de lectura valido. ('0' dato invalido, '1' dato valido) aka fin_byte
      dato_rd:       buffer std_logic_vector(7 downto 0);  -- Dato de lectura saliente.
 
      -- Salidas de control externo
@@ -50,9 +50,9 @@ architecture rtl of spi_master is
 
   signal SPC_cnt: std_logic_vector(3 downto 0); -- contador de numero de tics de 20 ns para generacion de SPC
   constant SPI_T_CLK: natural := 8; -- periodo de SPC en tics de 20 ns (8 -> T=160 ns -> f=6.25MHz)
-  constant SPI_T_2_CLK: natural := 4;
+  constant SPI_T_2_CLK: natural := 5;
   constant SPI_ENA_RD: natural := 5; -- habilitacion de lectura del bit en SDI
-  constant SPI_ENA_WR: natural := 2; -- habilitacion de escritura del bit en SDO
+  constant SPI_ENA_WR: natural := 2; -- habilitacion de escritura del bit en SDO, para respetar t_h(SDO)
   
   signal SPC_ena_rd: std_logic; -- identifica un flanco de subida
   signal SPC_ena_wr: std_logic; -- identifica un flanco de bajada
@@ -76,17 +76,17 @@ begin
   begin
     if nRst = '0' then
       estado         <= libre;
-      fin_tx         <= '1';
       ready_tx       <= '1';
       ena_rd         <= '0';
       cnt_bits_tx <= (others => '0');
       SPC_ena <= '0';
+      nCS <= '1';
 
     elsif clk'event and clk = '1' then
       case estado is
         when libre =>                                 -- Preparado para transmitir
           if ini_tx = '1' then                        -- Orden de start
-            CS <= '0';
+            nCS <= '0';
             estado <= start_tx;
             
           end if;
@@ -96,14 +96,9 @@ begin
           
           if tipo_op_nW_R = '0' then -- write
             estado <= wr_op;
-            reg_SDO <= tipo_op_nW_R & tipo_op_nW_R & reg_addr & -- primer byte: tipo de operacion y direccion
-                       dato_wr;                                 -- segundo byte: dato a escribir
 
           elsif tipo_op_nW_R = '1' then -- read
             estado <= rd_op;
-            reg_SDO <= tipo_op_nW_R & tipo_op_nW_R & reg_addr & -- primer byte: tipo de operacion y direccion
-                       X"00";                                   -- segundo byte vacio para operaciones de lectura
-            reg_SDI <= (others => '0');
           
           end if;
 
@@ -116,7 +111,7 @@ begin
           end if;
         
         when end_tx =>
-          CS <= '1';
+          nCS <= '1';
           estado <= libre;
           
       end case;
@@ -124,17 +119,16 @@ begin
     end if;
   end process;
 
-  ready_tx <= CS;
+  ready_tx <= nCS;
 
   -- Generacion de la señal de reloj para el bus SPI
   process(clk, nRst)
   begin
     if nRst = '0' then
-     SPC <= '1';
-     SPC_cnt <= (0 => '1', others => '0');
+      SPC_cnt <= (0 => '1', others => '0');
 
     elsif clk'event and clk = '1' then
-      if SPC_ena = '0' then -- utilizar un ena_SPC en vez de CS para habilitar SPC respetando tiempos o ya se respetan porque esto es un ciclo de reloj despues en verdad?
+      if SPC_ena = '1' then -- utilizar un ena_SPC en vez de nCS para habilitar SPC respetando tiempos o ya se respetan porque esto es un ciclo de reloj despues en verdad?
         if SPC_cnt < SPI_T_CLK then
           SPC_cnt <= SPC_cnt + 1;
 
@@ -147,7 +141,7 @@ begin
     end if;
   end process;
 
-  SPC <= '0' when SPC_cnt < SPI_T_2_CLK and SPC_ena = '0' else
+  SPC <= '0' when SPC_cnt < SPI_T_2_CLK and SPC_ena = '1' else
          '1';
   
   SPC_ena_rd <= '1' when SPC_cnt = SPI_ENA_RD else
@@ -166,14 +160,27 @@ begin
   begin
     if nRst = '0' then
       reg_SDO <= (others => '0');
+      SDO <= '1'; -- OJO
       
     elsif clk'event and clk = '1' then
+      if estado = start_tx then
+        if tipo_op_nW_R = '0' then -- write
+          reg_SDO <= tipo_op_nW_R & tipo_op_nW_R & reg_addr & -- primer byte: tipo de operacion y direccion
+                     dato_wr;                                 -- segundo byte: dato a escribir
+
+        elsif tipo_op_nW_R = '1' then -- read
+          reg_SDO <= tipo_op_nW_R & tipo_op_nW_R & reg_addr & -- primer byte: tipo de operacion y direccion
+                     X"00";                                   -- segundo byte vacio para operaciones de lectura
+        
+        end if;
+      end if;
+          
       if SPC_ena_wr = '1' and 
          ((estado = wr_op and cnt_bits_tx <= 16) or 
          (estado = rd_op and cnt_bits_tx <= 8)) then
       
         SDO <= reg_SDO(15);
-        reg_SDO <= reg_SDO(14 downto 0) & '0';
+        reg_SDO <= reg_SDO(14 downto 0) & '0'; -- OJO
         cnt_bits_tx <= cnt_bits_tx + 1;
         
       end if;
@@ -189,6 +196,12 @@ begin
       reg_SDI <= (others => '0');
       
     elsif clk'event and clk = '1' then
+    -- sobras
+      --if estado = start_tx and tipo_op_nW_R = '1' then
+      --  reg_SDI <= (others => '0');
+      --  
+      --end if;
+      
       if estado = rd_op and SPC_ena_rd = '1' and 
          cnt_bits_tx > 8 and cnt_bits_tx <= 40 then
          
@@ -198,6 +211,11 @@ begin
       end if;
     end if;
   end process;
+  
+  ena_rd <= '1' when estado = rd_op and SPC_ena_rd = '1' and (cnt_bits_tx = 16 or cnt_bits_tx = 24 or cnt_bits_tx = 32 or cnt_bits_tx = 40) else
+            '0';
+  
+  dato_rd <= reg_SDI(7 downto 0); -- OJO
   
   -- Generacion de señal de fin de transmision
   fin_tx <= '1' when estado = wr_op and cnt_bits_tx = 16 and SPC_cnt = SPI_T_2_CLK else
