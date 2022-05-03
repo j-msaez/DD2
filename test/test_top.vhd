@@ -15,8 +15,8 @@ architecture test of test_top is
   signal pos_Y:            std_logic_vector(1 downto 0);
   signal nCS:              std_logic;
   signal SPC:             std_logic;
-  signal SDI:             std_logic;
-  signal SDO:             std_logic;
+  signal MISO:             std_logic;
+  signal MOSI:             std_logic;
   signal ini_tx      :             std_logic;
   signal tipo_op_nW_R:             std_logic;
   signal reg_addr    :             std_logic_vector(5 downto 0);
@@ -45,8 +45,8 @@ architecture test of test_top is
              pos_Y => pos_Y,
              nCS   => nCS,
              SPC   => SPC,
-             SDI   => SDI,
-             SDO   => SDO);
+             SDI   => MOSI,
+             SDO   => MISO);
 
   -- DUT
   spi_master: entity work.spi_master(rtl)
@@ -54,8 +54,8 @@ architecture test of test_top is
              nRst         => nRst        ,
              nCS          => nCS         ,
              SPC          => SPC         ,
-             SDI          => SDI         ,
-             SDO          => SDO         ,
+             MISO         => MISO         ,
+             MOSI         => MOSI         ,
              ini_tx       => ini_tx      ,
              tipo_op_nW_R => tipo_op_nW_R,
              reg_addr     => reg_addr    ,
@@ -86,9 +86,6 @@ architecture test of test_top is
     tipo_op_nW_R <= '0';
     pos_X <= "00";
     pos_Y <= "00";
-    nCS <= '1';
-    SDI <= '1';
-    SDO <= '1';
     
     
     wait until clk'event and clk = '1';

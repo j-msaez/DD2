@@ -21,8 +21,8 @@ port(clk:           in std_logic;                         -- Señal de reloj.
      -- Entradas/Salidas linea SPI a 4 hilos
      nCS:           buffer std_logic;                     -- Liena SPI Chip Select (nCS)
      SPC:           buffer std_logic;                     -- Linea SPI Serial Peripheral Clock (SPC)
-     SDI:           in std_logic;                         -- Linea SPI Slave Data In (SDI)
-     SDO:           buffer std_logic;                     -- Linea SPI Slave Data Out (SDO)
+     MISO:           in std_logic;                         -- Linea SPI Slave Data In (MISO)
+     MOSI:           buffer std_logic;                     -- Linea SPI Slave Data Out (MOSI)
 
      -- Entradas de control externo
      ini_tx:        in std_logic;                         -- Orden de inicio de transaccion
@@ -50,28 +50,26 @@ architecture rtl of spi_master is
 
   constant SPI_T_CLK: natural := 8;                 -- Periodo de SPC en tics de 20 ns (8 -> T=160 ns -> f=6.25MHz)
   constant SPI_T_2_CLK: natural := 5;               -- Semiperiodo de SPC en tics de 20 ns.
-  constant SPI_ENA_RD: natural := 5;                -- Habilitacion de lectura del bit en SDI.
-  constant SPI_ENA_WR: natural := 2;                -- Habilitacion de escritura del bit en SDO, para respetar t_h(SDO)
-  
+  constant SPI_ENA_RD: natural := 6;                -- Habilitacion de lectura del bit en MISO.
+  constant SPI_ENA_WR: natural := 2;                -- Habilitacion de escritura del bit en MOSI, para respetar t_h(MOSI)
   
   signal SPC_ena: std_logic;                        -- Habilita la generacion de SPC.
   signal SPC_ena_rd: std_logic;                     -- Identifica un flanco de subida.
   signal SPC_ena_wr: std_logic;                     -- Identifica un flanco de bajada.
   signal SPC_cnt: std_logic_vector(3 downto 0);     -- Contador de numero de tics de 20 ns para generacion de SPC.
   
-  signal reg_SDO: std_logic_vector(15 downto 0);    -- registro para desplazamiento del dato de salida
-  signal reg_SDI: std_logic_vector(31 downto 0);    -- registro para desplazamiento del dato de entrada, cuando esta completo:
-                                                    -- reg_SDI(31 downto 24): OUT_X_L
-                                                    -- reg_SDI(23 downto 16): OUT_X_H
-                                                    -- reg_SDI(15 downto 8): OUT_Y_L
-                                                    -- reg_SDI(7 downto 0): OUT_Y_H
+  signal reg_MOSI: std_logic_vector(15 downto 0);    -- registro para desplazamiento del dato de salida
+  signal reg_MISO: std_logic_vector(31 downto 0);    -- registro para desplazamiento del dato de entrada, cuando esta completo:
+                                                    -- reg_MISO(31 downto 24): OUT_X_L
+                                                    -- reg_MISO(23 downto 16): OUT_X_H
+                                                    -- reg_MISO(15 downto 8): OUT_Y_L
+                                                    -- reg_MISO(7 downto 0): OUT_Y_H
   
-  signal cnt_bits_tx: std_logic_vector(5 downto 0); -- Numero de bits transmitidos en una operacion ya sean de lectura o escritura (max 40)
+  signal cnt_bits_tx: std_logic_vector(5 downto 0); -- Numero de bits transmitidos en una operacion ya sean de lectura o escritura (max 41)
   
   signal fin_tx: std_logic;                         -- Fin de transaccion.
   
-  signal ena_rd_reg: std_logic;                     -- Salida ena_rd registrada para evitar glitches.
---  signal ready_tx_reg: std_logic;                   -- Salida ready_tx registrada para evitar glitches.
+  signal SPC_aux: std_logic;                        -- Salida SPC registrada para evitar glitches.
 
 begin
   -- Maquina de estados para el control de transacciones
@@ -79,8 +77,6 @@ begin
   begin
     if nRst = '0' then
       estado         <= libre;
---    ena_rd         <= '0';
---    cnt_bits_tx <= (others => '0');
       SPC_ena <= '0';
       nCS <= '1';
 
@@ -122,20 +118,6 @@ begin
 
   ready_tx <= nCS;
 
--- -- Comentario:
--- process(clk, nRst)
--- begin
---   if nRst = '0' then
---     ready_tx <= '0';
---     
---   elsif clk'event and clk = '1' then
---     ready_tx <= ready_tx_reg;
---     
---   end if;
--- end process;
--- 
--- ready_tx_reg <= nCS;
-
   -- Generacion de la señal de reloj (SPC) para el bus SPI.
   process(clk, nRst)
   begin
@@ -155,8 +137,20 @@ begin
       end if;
     end if;
   end process;
+  
+  -- SPC: salida registrada del reloj
+  process(clk, nRst)
+  begin
+    if nRst = '0' then
+      SPC <= '0';
+      
+    elsif clk'event and clk = '1' then
+      SPC <= SPC_aux;
+      
+    end if;
+  end process;
 
-  SPC <= '0' when SPC_cnt < SPI_T_2_CLK and SPC_ena = '1' else
+  SPC_aux <= '0' when SPC_cnt < SPI_T_2_CLK and SPC_ena = '1' else
          '1';
 
   SPC_ena_rd <= '1' when SPC_cnt = SPI_ENA_RD else
@@ -166,22 +160,20 @@ begin
   SPC_ena_wr <= '1' when SPC_cnt = SPI_ENA_WR else
               '0';
 
--- hacer filtrado de SPC como se hacia para scl en i2c?
-
 -- Control de cnt_bits_tx.
   process(clk, nRst)
   begin
     if nRst = '0' then
-      cnt_bits_tx <= (0 => '1', others => '0');
+      cnt_bits_tx <= (others => '0');
       
     elsif clk'event and clk = '1' then
       if estado = start_tx then
-        cnt_bits_tx <= (0 => '1', others => '0');
+        cnt_bits_tx <= (others => '0');
         
       elsif SPC_ena_wr = '1' and ((estado = wr_op and cnt_bits_tx <= 16) or (estado = rd_op and cnt_bits_tx <= 8)) then
         cnt_bits_tx <= cnt_bits_tx + 1;
         
-      elsif SPC_ena_rd = '1' and estado = rd_op and cnt_bits_tx > 8 and cnt_bits_tx <= 40 then
+      elsif SPC_ena_rd = '1' and estado = rd_op and cnt_bits_tx > 8 and cnt_bits_tx <= 41 then
         cnt_bits_tx <= cnt_bits_tx + 1;
         
       end if;
@@ -197,17 +189,17 @@ begin
   process(clk, nRst)
   begin
     if nRst = '0' then
-      reg_SDO <= (others => '0');
-      SDO <= '1'; -- OJO
+      reg_MOSI <= (others => '0');
+      MOSI <= '1';
       
     elsif clk'event and clk = '1' then
       if estado = start_tx then
         if tipo_op_nW_R = '0' then                            -- Operacion de escritura.
-          reg_SDO <= tipo_op_nW_R & tipo_op_nW_R & reg_addr & -- primer byte: tipo de operacion y direccion.
+          reg_MOSI <= tipo_op_nW_R & tipo_op_nW_R & reg_addr & -- primer byte: tipo de operacion y direccion.
                      dato_wr;                                 -- segundo byte: dato a escribir.
 
         elsif tipo_op_nW_R = '1' then                         -- Operacion de lectura.
-          reg_SDO <= tipo_op_nW_R & tipo_op_nW_R & reg_addr & -- primer byte: tipo de operacion y direccion.
+          reg_MOSI <= tipo_op_nW_R & tipo_op_nW_R & reg_addr & -- primer byte: tipo de operacion y direccion.
                      X"00";                                   -- segundo byte: vacio para operaciones de lectura.
         
         end if;
@@ -216,10 +208,14 @@ begin
          ((estado = wr_op and cnt_bits_tx <= 16) or 
          (estado = rd_op and cnt_bits_tx <= 8)) then
          
-        SDO <= reg_SDO(15);
-        reg_SDO <= reg_SDO(14 downto 0) & '0'; -- OJO
-        
+        MOSI <= reg_MOSI(15);
+        reg_MOSI <= reg_MOSI(14 downto 0) & '0';
+      
+      elsif estado = end_tx then
+        MOSI <= '1';
+      
       end if;
+      
       
     end if;
   end process;
@@ -229,41 +225,28 @@ begin
   process(clk, nRst)
   begin
     if nRst = '0' then
-      reg_SDI <= (others => '0');
+      reg_MISO <= (others => '0');
       
     elsif clk'event and clk = '1' then
       if estado = rd_op and SPC_ena_rd = '1' and 
-        cnt_bits_tx > 8 and cnt_bits_tx <= 40 then
+        cnt_bits_tx > 8 and cnt_bits_tx <= 41 then
          
-        reg_SDI <= reg_SDI(30 downto 0) & SDI;
+        reg_MISO <= reg_MISO(30 downto 0) & MISO;
          
       end if;
       
     end if;
   end process;
   
-  -- ena_rd: salida registrada que indica cuando s¡un dato es valido
-  -- para su lectura. (Filtrar glitches)
-  process(clk, nRst)
-  begin
-    if nRst = '0' then
-      ena_rd <= '0';
-      
-    elsif clk'event and clk = '1' then
-      ena_rd <= ena_rd_reg;
-      
-    end if;
-  end process;
   
-  -- Presenta glitches. Registrar la señal.
-  ena_rd_reg <= '1' when estado = rd_op and SPC_ena_rd = '1' and (cnt_bits_tx = 16 or cnt_bits_tx = 24 or cnt_bits_tx = 32 or cnt_bits_tx = 40) else
+  ena_rd <= '1' when estado = rd_op and SPC_ena_rd = '1' and (cnt_bits_tx = 17 or cnt_bits_tx = 25 or cnt_bits_tx = 33 or cnt_bits_tx = 41) else
                 '0';
   
-  dato_rd <= reg_SDI(7 downto 0); -- OJO
+  dato_rd <= reg_MISO(7 downto 0);
   
   -- Generacion de señal de fin de transmision
   fin_tx <= '1' when estado = wr_op and cnt_bits_tx = 16 and SPC_cnt = SPI_T_2_CLK else
-            '1' when estado = rd_op and cnt_bits_tx = 40 else -- OJO
+            '1' when estado = rd_op and cnt_bits_tx = 41 else
             '0';
 
 end rtl;
