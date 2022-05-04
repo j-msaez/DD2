@@ -33,7 +33,6 @@ architecture rtl of calc_offset is
  
   signal acum_X:          std_logic_vector(9+ceil_log(N) downto 0); 
   signal acum_Y:          std_logic_vector(9+ceil_log(N) downto 0); 
-  signal acum_Z:          std_logic_vector(9+ceil_log(N) downto 0); 
 
 begin
   -- Contador de lecturas
