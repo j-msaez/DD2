@@ -21,8 +21,8 @@ port(clk:           in std_logic;                         -- Señal de reloj.
      -- Entradas/Salidas linea SPI a 4 hilos
      nCS:           buffer std_logic;                     -- Liena SPI Chip Select (nCS)
      SPC:           buffer std_logic;                     -- Linea SPI Serial Peripheral Clock (SPC)
-     MISO:           in std_logic;                         -- Linea SPI Slave Data In (MISO)
-     MOSI:           buffer std_logic;                     -- Linea SPI Slave Data Out (MOSI)
+     MISO:          in std_logic;                         -- Linea SPI Slave Data In (MISO)
+     MOSI:          buffer std_logic;                     -- Linea SPI Slave Data Out (MOSI)
 
      -- Entradas de control externo
      ini_tx:        in std_logic;                         -- Orden de inicio de transaccion
@@ -58,8 +58,8 @@ architecture rtl of spi_master is
   signal SPC_ena_wr: std_logic;                     -- Identifica un flanco de bajada.
   signal SPC_cnt: std_logic_vector(3 downto 0);     -- Contador de numero de tics de 20 ns para generacion de SPC.
   
-  signal reg_MOSI: std_logic_vector(15 downto 0);    -- registro para desplazamiento del dato de salida
-  signal reg_MISO: std_logic_vector(31 downto 0);    -- registro para desplazamiento del dato de entrada, cuando esta completo:
+  signal reg_MOSI: std_logic_vector(15 downto 0);   -- registro para desplazamiento del dato de salida
+  signal reg_MISO: std_logic_vector(31 downto 0);   -- registro para desplazamiento del dato de entrada, cuando esta completo:
                                                     -- reg_MISO(31 downto 24): OUT_X_L
                                                     -- reg_MISO(23 downto 16): OUT_X_H
                                                     -- reg_MISO(15 downto 8): OUT_Y_L
@@ -125,7 +125,7 @@ begin
       SPC_cnt <= (0 => '1', others => '0');
 
     elsif clk'event and clk = '1' then
-      if SPC_ena = '1' then -- utilizar un ena_SPC en vez de nCS para habilitar SPC respetando tiempos o ya se respetan porque esto es un ciclo de reloj despues en verdad?
+      if SPC_ena = '1' then
         if SPC_cnt < SPI_T_CLK then
           SPC_cnt <= SPC_cnt + 1;
 
