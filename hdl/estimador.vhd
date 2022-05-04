@@ -20,7 +20,7 @@ port(nRst:             in     std_logic;
      
 end entity;
 
-architecture rtl of estimador is													
+architecture rtl of estimador is
   type reg_file is array (NATURAL RANGE <>) of std_logic_vector(21 downto 0);
   signal reg_muestra: reg_file(N-1 downto 0);
   signal reg_file_aux: std_logic_vector(21 downto 0);
@@ -64,12 +64,12 @@ begin
     if nRst = '0' then
       X_media_N <= (others => '0') ;
       Y_media_N <= (others => '0') ;
-		
+      
     elsif clk'event and clk = '1' then
       if muestra_bias_rdy = '1' then
-        X_media_N <= X_media_N + dif_X_muestra_N;				
+        X_media_N <= X_media_N + dif_X_muestra_N;
         Y_media_N <= Y_media_N + dif_Y_muestra_N;
-		  
+        
       end if;
     end if;
   end process;
