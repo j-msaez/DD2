@@ -8,21 +8,26 @@ end entity;
 architecture test of test_top_controlador_spi is
 
 -- Segnales del DUT
-  signal clk:          std_logic;
-  signal nRst:         std_logic;
-  signal pos_X:        std_logic_vector(1 downto 0);
-  signal pos_Y:        std_logic_vector(1 downto 0);
-  signal nCS:          std_logic;
-  signal SPC:          std_logic;
-  signal MISO:         std_logic;
-  signal MOSI:         std_logic;
-  signal ini_tx:       std_logic;
-  signal tipo_op_nW_R: std_logic;
-  signal reg_addr:     std_logic_vector(5 downto 0);
-  signal dato_wr:      std_logic_vector(7 downto 0);
-  signal ena_rd:       std_logic;
-  signal dato_rd:      std_logic_vector(7 downto 0);
-  signal ready_tx:     std_logic;
+  signal clk:              std_logic;
+  signal nRst:             std_logic;
+  signal pos_X:            std_logic_vector(1 downto 0);
+  signal pos_Y:            std_logic_vector(1 downto 0);
+  signal nCS:              std_logic;
+  signal SPC:              std_logic;
+  signal MISO:             std_logic;
+  signal MOSI:             std_logic;
+  signal ini_tx:           std_logic;
+  signal tipo_op_nW_R:     std_logic;
+  signal reg_addr:         std_logic_vector(5 downto 0);
+  signal dato_wr:          std_logic_vector(7 downto 0);
+  signal ena_rd:           std_logic;
+  signal dato_rd:          std_logic_vector(7 downto 0);
+  signal ready_tx:         std_logic;
+  signal X_out_bias:       std_logic_vector(10 downto 0);
+  signal Y_out_bias:       std_logic_vector(10 downto 0);
+  signal muestra_bias_rdy: std_logic;
+  signal X_media:          std_logic_vector(11 downto 0); 
+  signal Y_media:          std_logic_vector(11 downto 0);
   
   constant Tclk:       time := 20 ns; -- reloj de 50 MHz
   
@@ -72,6 +77,26 @@ architecture test of test_top_controlador_spi is
              reg_addr     => reg_addr    ,
              dato_wr      => dato_wr     ,
              ready_tx     => ready_tx);
+  
+  calc_offset: entity work.calc_offset(rtl)
+    generic map(N => 64)
+    port map (nRst              => nRst            ,
+              clk               => clk             ,
+              ena_rd            => ena_rd          ,
+              dato_rd           => dato_rd         ,
+              X_out_bias        => X_out_bias      ,
+              Y_out_bias        => Y_out_bias      ,
+              muestra_bias_rdy  => muestra_bias_rdy);
+  
+  estimador: entity work.estimador(rtl)
+    generic map(N => 32)
+    port map (nRst             => nRst            ,
+              clk              => clk             ,
+              X_out_bias       => X_out_bias      ,
+              Y_out_bias       => Y_out_bias      ,
+              muestra_bias_rdy => muestra_bias_rdy,
+              X_media          => X_media         ,
+              Y_media          => Y_media         );
   
 -- Secuencia de estimulos
 

@@ -5,23 +5,30 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_signed.all;
 
+-- Lleva a cabo la medida del offset inicial
+-- mediante el promediado de una serie configurable de medidas al inicio de operación.
+-- La medida del offset inicial se hace los primeros 320 ms, que se corresponde con 64 medidas
+-- Posteriomente, calcula el valor corregido de las muestras en X e Y a partir del offset
+-- previamente calculado.
+
 entity calc_offset is
-generic(N:        in positive := 32);     -- numero de registros del banco (potencia de 2)
+generic(N:        in positive := 32);     -- numero de registros del banco (potencia de 2) aka numero de medidas para calculo de offset inicial (64 para nuestra aplicacion)
 port(nRst:             in     std_logic;
      clk:              in     std_logic;
-
+     
+     -- Entradas para calc_offset, salidas de spi_master
      ena_rd:           in     std_logic;
      dato_rd:          in     std_logic_vector(7 downto 0);
 
+     -- Salidas para calc_offset, entradas para estimador
      X_out_bias:       buffer std_logic_vector(10 downto 0);
      Y_out_bias:       buffer std_logic_vector(10 downto 0);
-
      muestra_bias_rdy: buffer std_logic);
      
 end entity;
 
 architecture rtl of calc_offset is
-  signal cnt_rd:          std_logic_vector(2+ceil_log(N) downto 0);
+  signal cnt_rd:          std_logic_vector(2+ceil_log(N) downto 0); -- 8 bits -> 256 cuentas -> 256/4 = 64 medidas de X (2 lecturas para cada medida de X), lo mismo para Y
   signal ena_calc:        std_logic;
   signal offset_rdy:      std_logic;
 
@@ -31,7 +38,7 @@ architecture rtl of calc_offset is
   signal offset_X:        std_logic_vector(10 downto 0); 
   signal offset_Y:        std_logic_vector(10 downto 0); 
  
-  signal acum_X:          std_logic_vector(9+ceil_log(N) downto 0); 
+  signal acum_X:          std_logic_vector(9+ceil_log(N) downto 0); -- 15 bits, hasta
   signal acum_Y:          std_logic_vector(9+ceil_log(N) downto 0); 
 
 begin
@@ -51,13 +58,13 @@ begin
             cnt_rd(2+ceil_log(N) downto 2) <= cnt_rd(2+ceil_log(N) downto 2) + 1;
             ena_calc <= '1';
 
-          else
+          else -- el offset ya se ha hecho y se le pasa una medida al estimador
             muestra_bias_rdy <= '1';
 
           end if;          
         end if;
 
-      else
+      else -- si ena_rd = '0' se desactivan señales de habilitacion
         ena_calc <= '0';
         muestra_bias_rdy <= '0';
 
@@ -105,12 +112,12 @@ begin
     end if;
   end process;
 
-  offset_X <= acum_X(9+ceil_log(N))&acum_X(9+ceil_log(N) downto ceil_log(N));
-  offset_Y <= acum_Y(9+ceil_log(N))&acum_Y(9+ceil_log(N) downto ceil_log(N));
+  offset_X <= acum_X(9+ceil_log(N))&acum_X(9+ceil_log(N) downto ceil_log(N)); -- medida del offset inicial 
+  offset_Y <= acum_Y(9+ceil_log(N))&acum_Y(9+ceil_log(N) downto ceil_log(N)); -- medida del offset inicial 
 
-  X_out_bias <=                      when offset_rdy = '1' else  -- A completar por el estudiante
+  X_out_bias <= muestra_X - offset_X when offset_rdy = '1' else
                 (others => '0');
-  Y_out_bias <=                      when offset_rdy = '1' else  -- A completar por el estudiante
+  Y_out_bias <= muestra_Y - offset_Y when offset_rdy = '1' else
                 (others => '0');
 
 
