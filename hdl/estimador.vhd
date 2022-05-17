@@ -21,7 +21,7 @@ port(nRst:             in     std_logic;
      Y_out_bias:       in     std_logic_vector(10 downto 0);
      muestra_bias_rdy: in     std_logic;
     
-    -- Resultado de estimador
+    -- Resultado de estimador, salidas para estimador, entradas para representacion
      X_media:          buffer std_logic_vector(11 downto 0); 
      Y_media:          buffer std_logic_vector(11 downto 0));
      

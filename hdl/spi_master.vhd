@@ -239,7 +239,7 @@ begin
   end process;
   
   
-  ena_rd <= '1' when estado = rd_op and SPC_ena_rd = '1' and (cnt_bits_tx = 17 or cnt_bits_tx = 25 or cnt_bits_tx = 33 or cnt_bits_tx = 41) else
+  ena_rd <= '1' when estado = rd_op and ((SPC_ena_rd = '1' and (cnt_bits_tx = 17 or cnt_bits_tx = 25 or cnt_bits_tx = 33)) or fin_tx = '1') else -- OJO esto podria hacerse mas bonito
                 '0';
   
   dato_rd <= reg_MISO(7 downto 0);

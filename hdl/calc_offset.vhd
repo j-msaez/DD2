@@ -28,7 +28,7 @@ port(nRst:             in     std_logic;
 end entity;
 
 architecture rtl of calc_offset is
-  signal cnt_rd:          std_logic_vector(2+ceil_log(N) downto 0); -- 8 bits -> 256 cuentas -> 256/4 = 64 medidas de X (2 lecturas para cada medida de X), lo mismo para Y
+  signal cnt_rd:          std_logic_vector(2+ceil_log(N) downto 0); -- 9 bits -> un bit mas que para 256 cuentas -> 256/4 = 64 medidas de X (2 lecturas para cada medida de X), lo mismo para Y
   signal ena_calc:        std_logic;
   signal offset_rdy:      std_logic;
 

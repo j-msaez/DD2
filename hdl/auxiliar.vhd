@@ -24,7 +24,7 @@ package body auxiliar is
       end if;
     end loop;
     return 0; --Error
-  end ceil_log; 
+  end ceil_log;
   
   type tabla_LEDs_on is array(1 to 8, 1 to 8) of std_logic_vector(7 downto 0);
   function calc_LEDs(no_pasos: in rango_pasos;

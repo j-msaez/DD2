@@ -2,10 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-entity test_top_controlador_spi is
+entity test_top_fase_3 is
 end entity;
 
-architecture test of test_top_controlador_spi is
+architecture test of test_top_fase_3 is
 
 -- Segnales del DUT
   signal clk:              std_logic;
@@ -28,6 +28,9 @@ architecture test of test_top_controlador_spi is
   signal muestra_bias_rdy: std_logic;
   signal X_media:          std_logic_vector(11 downto 0); 
   signal Y_media:          std_logic_vector(11 downto 0);
+  signal seg             : std_logic_vector(6 downto 0);
+  signal disp            : std_logic_vector(7 downto 0);
+  signal leds            : std_logic_vector(7 downto 0);
   
   constant Tclk:       time := 20 ns; -- reloj de 50 MHz
   
@@ -97,6 +100,15 @@ architecture test of test_top_controlador_spi is
               muestra_bias_rdy => muestra_bias_rdy,
               X_media          => X_media         ,
               Y_media          => Y_media         );
+              
+  representacion: entity work.representacion(rtl)
+    port map (clk           => clk    ,
+              nRst          => nRst   ,
+              X_media       => X_media,
+              Y_media       => Y_media,
+              seg           => seg    ,
+              disp          => disp   ,
+              leds          => leds   );
   
 -- Secuencia de estimulos
 
@@ -123,22 +135,30 @@ architecture test of test_top_controlador_spi is
     nRst <= '1';
     -- Fin de reset
     
-    wait for 25 ms;
+    report "*********************************************TEST: obteniendo offset inicial";
+    
+    wait for 320 ms;
+    
+    report "*********************************************TEST: obteniendo medidas en horizontal";
+    
+    wait for 160 ms;
     wait until clk'event and clk = '1';
+    report "*********************************************TEST: obteniendo medidas de inclinacion negativa";
     pos_X <= "10";
     pos_Y <= "10";
     
-    wait for 25 ms;
+    wait for 160 ms;
     wait until clk'event and clk = '1';
+    report "*********************************************TEST: obteniendo medidas de inclinacion positiva";
     pos_X <= "11";
     pos_Y <= "11";
     
-    wait for 25 ms;
+    wait for 160 ms;
     wait until clk'event and clk = '1';
   
     -- Fin del test
     assert false
-    report "fin del test de MEDTH"
+    report "fin del test de NIVEL"
     severity failure;
 
   end process;

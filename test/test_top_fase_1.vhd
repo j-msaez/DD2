@@ -2,10 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-entity test_top_controlador_spi is
+entity test_top_fase_1 is
 end entity;
 
-architecture test of test_top_controlador_spi is
+architecture test of test_top_fase_1 is
 
 -- Segnales del DUT
   signal clk:          std_logic;
@@ -29,7 +29,6 @@ architecture test of test_top_controlador_spi is
   begin
 
   -- Reloj de 50 MHz
-
   process
   begin
     clk <= '0';
@@ -53,24 +52,14 @@ architecture test of test_top_controlador_spi is
              nRst         => nRst        ,
              nCS          => nCS         ,
              SPC          => SPC         ,
-             MISO         => MISO        ,
-             MOSI         => MOSI        ,
+             MISO         => MISO         ,
+             MOSI         => MOSI         ,
              ini_tx       => ini_tx      ,
              tipo_op_nW_R => tipo_op_nW_R,
              reg_addr     => reg_addr    ,
              dato_wr      => dato_wr     ,
              ena_rd       => ena_rd      ,
              dato_rd      => dato_rd     ,
-             ready_tx     => ready_tx);
-             
-  -- DUT
-  spi_controlador: entity work.spi_controlador(rtl)
-    port map(clk          => clk         ,
-             nRst         => nRst        ,
-             ini_tx       => ini_tx      ,
-             tipo_op_nW_R => tipo_op_nW_R,
-             reg_addr     => reg_addr    ,
-             dato_wr      => dato_wr     ,
              ready_tx     => ready_tx);
   
 -- Secuencia de estimulos
@@ -89,6 +78,10 @@ architecture test of test_top_controlador_spi is
     nRst <= '0';
     wait until clk'event and clk = '1';
     wait until clk'event and clk = '1';
+    ini_tx <= '0';
+    dato_wr      <= X"00";
+    reg_addr     <= "000000";
+    tipo_op_nW_R <= '0';
     pos_X <= "00";
     pos_Y <= "00";
     
@@ -96,19 +89,79 @@ architecture test of test_top_controlador_spi is
     wait until clk'event and clk = '1';
     wait until clk'event and clk = '1';
     nRst <= '1';
+    
     -- Fin de reset
     
-    wait for 25 ms;
+    -- 1: tx de escritura
+    report "1: tx de escritura";
+    
+    wait for 10*Tclk;
     wait until clk'event and clk = '1';
+    
+    tipo_op_nW_R <= '0';
+    reg_addr <= "101010";
+    dato_wr <= X"ea";
+    wait until clk'event and clk = '1';
+    
+    ini_tx <= '1';
+    wait until clk'event and clk = '1';
+    ini_tx <= '0';
+    
+    wait for 200 us;
+    wait until clk'event and clk = '1';
+    
+    
+    -- 2: tx de lectura pos_X 00, pos_Y 00
+    report "2: tx de lectura pos_X 00, pos_Y 00";
+    
+    pos_X <= "00";
+    pos_Y <= "00";
+    
+    tipo_op_nW_R <= '1';
+    reg_addr <= "110011";
+    wait until clk'event and clk = '1';
+    
+    ini_tx <= '1';
+    wait until clk'event and clk = '1';
+    ini_tx <= '0';
+    
+    wait for 200 us;
+    wait until clk'event and clk = '1';
+    
+    
+    -- 3: tx de lectura pos_X 10, pos_Y 10
+    report "3: tx de lectura pos_X 10, pos_Y 10";
+    
     pos_X <= "10";
     pos_Y <= "10";
     
-    wait for 25 ms;
+    tipo_op_nW_R <= '1';
+    reg_addr <= "110011";
     wait until clk'event and clk = '1';
+    
+    ini_tx <= '1';
+    wait until clk'event and clk = '1';
+    ini_tx <= '0';
+    
+    wait for 200 us;
+    wait until clk'event and clk = '1';
+    
+    
+    -- 4: tx de lectura pos_X 11, pos_Y 11
+    report "4: tx de lectura pos_X 11, pos_Y 11";
+    
     pos_X <= "11";
     pos_Y <= "11";
     
-    wait for 25 ms;
+    tipo_op_nW_R <= '1';
+    reg_addr <= "110011";
+    wait until clk'event and clk = '1';
+    
+    ini_tx <= '1';
+    wait until clk'event and clk = '1';
+    ini_tx <= '0';
+    
+    wait for 200 us;
     wait until clk'event and clk = '1';
   
     -- Fin del test
