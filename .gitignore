@@ -8,8 +8,8 @@
 *.psm
 *.bak
 *.cmp
-*.jpg
 *.html
+*.jpg
 *.bsf
 
 # ignore simulation output of ModelSim
@@ -29,4 +29,4 @@ target/
 *.project
 bin/
 
-
+!quartus/**
