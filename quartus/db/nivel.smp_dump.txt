@@ -1,0 +1,15 @@
+
+State Machine - |nivel|spi_controlador:spi_controlador|estado
+Name estado.measure estado.configure_reg_1 estado.configure_reg_4 estado.initialization 
+estado.initialization 0 0 0 0 
+estado.configure_reg_4 0 0 1 1 
+estado.configure_reg_1 0 1 0 1 
+estado.measure 1 0 0 1 
+
+State Machine - |nivel|spi_master:spi_master|estado
+Name estado.end_tx estado.rd_op estado.wr_op estado.start_tx estado.libre 
+estado.libre 0 0 0 0 0 
+estado.start_tx 0 0 0 1 1 
+estado.wr_op 0 0 1 0 1 
+estado.rd_op 0 1 0 0 1 
+estado.end_tx 1 0 0 0 1 

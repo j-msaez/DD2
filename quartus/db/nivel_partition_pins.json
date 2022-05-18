@@ -1,0 +1,97 @@
+{
+	"partitions" : [
+		{
+			"name" : "Top",
+			"pins" : [
+				{
+					"name" : "nCS",
+					"strict" : false
+				},
+				{
+					"name" : "SPC",
+					"strict" : false
+				},
+				{
+					"name" : "MOSI",
+					"strict" : false
+				},
+				{
+					"name" : "disp[0]",
+					"strict" : false
+				},
+				{
+					"name" : "disp[1]",
+					"strict" : false
+				},
+				{
+					"name" : "disp[2]",
+					"strict" : false
+				},
+				{
+					"name" : "disp[3]",
+					"strict" : false
+				},
+				{
+					"name" : "disp[4]",
+					"strict" : false
+				},
+				{
+					"name" : "disp[5]",
+					"strict" : false
+				},
+				{
+					"name" : "disp[6]",
+					"strict" : false
+				},
+				{
+					"name" : "disp[7]",
+					"strict" : false
+				},
+				{
+					"name" : "leds[0]",
+					"strict" : false
+				},
+				{
+					"name" : "leds[1]",
+					"strict" : false
+				},
+				{
+					"name" : "leds[2]",
+					"strict" : false
+				},
+				{
+					"name" : "leds[3]",
+					"strict" : false
+				},
+				{
+					"name" : "leds[4]",
+					"strict" : false
+				},
+				{
+					"name" : "leds[5]",
+					"strict" : false
+				},
+				{
+					"name" : "leds[6]",
+					"strict" : false
+				},
+				{
+					"name" : "leds[7]",
+					"strict" : false
+				},
+				{
+					"name" : "clk",
+					"strict" : false
+				},
+				{
+					"name" : "nRst",
+					"strict" : false
+				},
+				{
+					"name" : "MISO",
+					"strict" : false
+				}
+			]
+		}
+	]
+}

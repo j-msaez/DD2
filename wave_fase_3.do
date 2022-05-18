@@ -74,15 +74,19 @@ add wave -noupdate -expand -group estimador -radix decimal /test_top_fase_3/esti
 add wave -noupdate -expand -group estimador -radix decimal /test_top_fase_3/estimador/Y_media_N
 add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/clk
 add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/nRst
-add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/X_media
-add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/Y_media
+add wave -noupdate -expand -group representacion -radix decimal /test_top_fase_3/representacion/X_media
+add wave -noupdate -expand -group representacion -radix decimal /test_top_fase_3/representacion/Y_media
 add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/seg
 add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/disp
 add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/leds
 add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/N_X
 add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/N_Y
+add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/cnt_tic_1ms
+add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/T_TIC_MUX
+add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/mascara_on
+add wave -noupdate -expand -group representacion /test_top_fase_3/representacion/display_desplazamiento
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {81563697513 ps} 0}
+WaveRestoreCursors {{Cursor 1} {486366370000 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
@@ -98,4 +102,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ps
 update
-WaveRestoreZoom {0 ps} {840000157500 ps}
+WaveRestoreZoom {460116363472 ps} {512616376528 ps}

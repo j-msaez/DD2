@@ -1,0 +1,16 @@
+Analysis & Synthesis Status : Successful - Wed May 18 17:15:38 2022
+Quartus Prime Version : 16.0.0 Build 211 04/27/2016 SJ Lite Edition
+Revision Name : nivel
+Top-level Entity Name : nivel
+Family : MAX 10
+Total logic elements : 499
+    Total combinational functions : 457
+    Dedicated logic registers : 217
+Total registers : 217
+Total pins : 29
+Total virtual pins : 0
+Total memory bits : 660
+Embedded Multiplier 9-bit elements : 0
+Total PLLs : 0
+UFM blocks : 0
+ADC blocks : 0
